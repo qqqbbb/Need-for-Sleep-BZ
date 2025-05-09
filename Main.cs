@@ -20,12 +20,11 @@ namespace Need_for_Sleep_BZ
     {
         public const string PLUGIN_GUID = "qqqbbb.subnauticaBZ.NeedForSleep";
         public const string PLUGIN_NAME = "Need for Sleep";
-        public const string PLUGIN_VERSION = "1.0.0";
+        public const string PLUGIN_VERSION = "1.1.0";
         public static ManualLogSource logger { get; private set; }
         static string configPath = Paths.ConfigPath + Path.DirectorySeparatorChar + PLUGIN_NAME + Path.DirectorySeparatorChar + "Config.cfg";
         public static ConfigFile config;
         internal static OptionsMenu options;
-        public static bool gameLoaded;
         public static bool enhancedSleepLoaded;
         public static bool tweaksFixesLoaded;
 
@@ -53,21 +52,14 @@ namespace Need_for_Sleep_BZ
         {
             public static void Postfix(WaitScreen __instance)
             {
-                LoadedGameSetup();
+                Patches.Setup();
             }
-        }
-
-        static void LoadedGameSetup()
-        {
-            gameLoaded = true;
-            Patches.Setup();
         }
 
         private void OnQuit()
         {
             //Logger.LogDebug("Need for Sleep OnQuit");
             Patches.ResetVars();
-            gameLoaded = false;
         }
 
         public static void GetLoadedMods()

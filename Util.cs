@@ -8,10 +8,6 @@ namespace Need_for_Sleep_BZ
 {
     internal class Util
     {
-        public static bool IsGameLoadedAndRunning()
-        {
-            return Main.gameLoaded && Time.timeScale > 0;
-        }
 
         public static bool IsPlayerInDropPod()
         {
@@ -28,9 +24,21 @@ namespace Need_for_Sleep_BZ
             else
                 fl = ((float)value - (float)min) / (float)oldRange;
 
-            return fl;
+            return Mathf.Clamp01(fl);
         }
 
+        public static float MapTo01range(float value, float min, float max)
+        {
+            float fl;
+            float oldRange = max - min;
+
+            if (oldRange == 0)
+                fl = 0f;
+            else
+                fl = (value - min) / oldRange;
+
+            return Mathf.Clamp01(fl);
+        }
 
         public static IEnumerator Spawn(TechType techType, IOut<GameObject> result, Vector3 pos = default, Vector3 rot = default)
         {
