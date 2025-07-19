@@ -620,12 +620,12 @@ namespace Need_for_Sleep_BZ
                     if (timeSwimStart == 0)
                     {
                         //AddDebug("Swim Start  ");
-                        timeSwimStart = DayNightCycle.main.timePassedAsFloat;
+                        timeSwimStart = Time.time;
                     }
                 }
                 if (timeSwimStart > 0)
                 {
-                    float timeSwam = DayNightCycle.main.timePassedAsFloat - timeSwimStart;
+                    float timeSwam = Time.time - timeSwimStart;
                     accel = Util.MapTo01range(timeSwam, 0, GetSleepDebt() * 2);
                     //AddDebug($"accel  {accel.ToString("0.0")}");
                 }
@@ -667,16 +667,16 @@ namespace Need_for_Sleep_BZ
                     if (timeWalkStart == 0)
                     {
                         //AddDebug("Walk Start  ");
-                        timeWalkStart = DayNightCycle.main.timePassedAsFloat;
+                        timeWalkStart = Time.time;
                     }
                     if (__instance.sprintPressed && timeSprintStart == 0)
                     {
                         //AddDebug("Sprint Start  ");
-                        timeSprintStart = DayNightCycle.main.timePassedAsFloat;
+                        timeSprintStart = Time.time;
                         __instance.forwardSprintModifier = 1;
                         if (timeStopSprint == 0)
                         {
-                            timeStopSprint = DayNightCycle.main.timePassedAsFloat + UnityEngine.Random.Range(timeSprintMin, timeSprintMax);
+                            timeStopSprint = Time.time + UnityEngine.Random.Range(timeSprintMin, timeSprintMax);
                         }
                     }
                 }
@@ -684,14 +684,14 @@ namespace Need_for_Sleep_BZ
                 float sprintAccel = 1;
                 if (timeWalkStart > 0)
                 {
-                    float timeWalked = DayNightCycle.main.timePassedAsFloat - timeWalkStart;
+                    float timeWalked = Time.time - timeWalkStart;
                     accel = Util.MapTo01range(timeWalked, 0, GetSleepDebt());
                 }
                 if (timeSprintStart > 0)
                 {
                     if (__instance.sprintPressed)
                     {
-                        float timeWprinted = DayNightCycle.main.timePassedAsFloat - timeSprintStart;
+                        float timeWprinted = Time.time - timeSprintStart;
                         sprintAccel = Util.MapTo01range(timeWprinted, 0, forwardSprintModifierDefault + GetSleepDebt());
                         //AddDebug($"sprintAccel {sprintAccel.ToString("0.0")} ");
                         float forwardSprintModifier = forwardSprintModifierDefault * sprintAccel;

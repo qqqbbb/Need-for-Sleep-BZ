@@ -28,10 +28,6 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Localization\" />
-  </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="mkdir &quot;D:\SteamLibrary\steamapps\common\SubnauticaZero\BepInEx\plugins\NeedForSleep&quot;&#xD;&#xA;copy /Y &quot;$(TargetPath)&quot; &quot;D:\SteamLibrary\steamapps\common\SubnauticaZero\BepInEx\plugins\NeedForSleep\$(TargetFileName)&quot;&#xD;&#xA;&#xD;&#xA;mkdir &quot;D:\SteamLibrary\steamapps\common\SubnauticaZero\BepInEx\plugins\NeedForSleep\Localization&quot;&#xD;&#xA;copy /Y &quot;$(ProjectDir)\Localization\*.*&quot; &quot;D:\SteamLibrary\steamapps\common\SubnauticaZero\BepInEx\plugins\NeedForSleep\Localization&quot;&#xD;&#xA; &#xD;&#xA;&#xD;&#xA;mkdir &quot;C:\GAMES\Subnautica Below Zero\BepInEx\plugins\NeedForSleep&quot;&#xD;&#xA;copy /Y &quot;$(TargetPath)&quot; &quot;C:\GAMES\Subnautica Below Zero\BepInEx\plugins\NeedForSleep\$(TargetFileName)&quot;&#xD;&#xA;&#xD;&#xA;mkdir &quot;C:\GAMES\Subnautica Below Zero\BepInEx\plugins\NeedForSleep\Localization&quot;&#xD;&#xA;copy /Y &quot;$(ProjectDir)\Localization\*.*&quot; &quot;C:\GAMES\Subnautica Below Zero\BepInEx\plugins\NeedForSleep\Localization&quot;&#xD;&#xA; " />
   </Target>
