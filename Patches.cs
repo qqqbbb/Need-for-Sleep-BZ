@@ -27,7 +27,7 @@ namespace Need_for_Sleep_BZ
         static bool frame;
         static Bed myBed;
         static Vector3 myBedLocalPos = new Vector3(0, -2, 0);
-        static int checkLayerMask = ~(1 << LayerMask.NameToLayer("Player") | 1 << LayerMask.NameToLayer("Trigger"));
+        static int layerCheckMask = ~(1 << LayerMask.NameToLayer("Player") | 1 << LayerMask.NameToLayer("Trigger"));
         static float sleepDurationMult = 1;
         static HashSet<Button> delayableButtons = new HashSet<Button> { Button.MoveForward, Button.MoveBackward, Button.MoveLeft, Button.MoveRight, Button.MoveDown, Button.MoveUp, Button.Jump, Button.PDA, Button.Deconstruct, Button.LeftHand, Button.RightHand, Button.CycleNext, Button.CyclePrev, Button.Slot1, Button.Slot2, Button.Slot3, Button.Slot4, Button.Slot5, Button.AltTool, Button.Reload, Button.Sprint, Button.AutoMove, Button.LookDown, Button.LookUp, Button.LookRight, Button.LookLeft };
         static Dictionary<Button, Config.SleepButton> sleepButtons = new Dictionary<Button, Config.SleepButton> { { Button.LeftHand, Config.SleepButton.Left_hand }, { Button.RightHand, Config.SleepButton.Right_hand }, { Button.Jump, Config.SleepButton.Jump }, { Button.Deconstruct, Config.SleepButton.Deconstruct }, { Button.AltTool, Config.SleepButton.Tool_alt_use }, { Button.Reload, Config.SleepButton.Reload }, { Button.Sprint, Config.SleepButton.Sprint } };
@@ -50,7 +50,6 @@ namespace Need_for_Sleep_BZ
         private static float timeWalkStart;
         private static float timeSprintStart;
         private static float timeSwimStart;
-        private static bool checkingSleepButton;
 
         public static void ResetVars()
         {
@@ -88,7 +87,7 @@ namespace Need_for_Sleep_BZ
         public static float GetSleepDebt()
         {
             //GameModeManager.GetOption<bool>(GameOption.Hunger)
-            if (GameModeManager.GetCurrentPresetId() == GameModePresetId.Creative)
+            if (setupDone == false || GameModeManager.GetCurrentPresetId() == GameModePresetId.Creative)
                 return 0;
 
             return sleepDebt * GetCoffeeMod();
@@ -239,8 +238,15 @@ namespace Need_for_Sleep_BZ
         private static void ApplyPenulties()
         {
             float sd = GetSleepDebt();
-            radialBlurControl.SetAmount(sd);
-            speedMod = 1f - sd * .5f;
+            if (Config.slowerMovement.Value)
+                speedMod = 1f - sd * .5f;
+            else
+                speedMod = 1f;
+
+            if (Config.blurryVision.Value)
+                radialBlurControl.SetAmount(sd);
+            else
+                radialBlurControl.SetAmount(0);
         }
 
         private static void StartSleep()
@@ -368,11 +374,9 @@ namespace Need_for_Sleep_BZ
                 if (lookingAtGround)
                     OnBedHandHover(myBed);
 
-                checkingSleepButton = true;
                 if (GameInput.GetButtonDown(sleepButtons_[Config.sleepButton.Value]) == false)
                     return;
 
-                checkingSleepButton = false;
                 if (Config.showTimeTillTireSleepButton.Value && !lookingAtBed && !lookingAtGround)
                     AddDebug(GetTiredTextLookingAtBed());
                 else if (lookingAtGround && CanSleep())
@@ -452,13 +456,13 @@ namespace Need_for_Sleep_BZ
         {
             Transform playerT = Player.main.transform;
             Vector3 pos = new Vector3(playerT.position.x, playerT.position.y - 1, playerT.position.z);
-            if (!Physics.Raycast(new Ray(pos, playerT.forward), 1f, checkLayerMask))
+            if (!Physics.Raycast(new Ray(pos, playerT.forward), 1f, layerCheckMask))
                 SetBedRotation(90);
-            else if (!Physics.Raycast(new Ray(pos, -playerT.forward), 1f, checkLayerMask))
+            else if (!Physics.Raycast(new Ray(pos, -playerT.forward), 1f, layerCheckMask))
                 SetBedRotation(270);
-            else if (!Physics.Raycast(new Ray(pos, playerT.right), 1f, checkLayerMask))
+            else if (!Physics.Raycast(new Ray(pos, playerT.right), 1f, layerCheckMask))
                 SetBedRotation(180);
-            else if (!Physics.Raycast(new Ray(pos, -playerT.right), 1f, checkLayerMask))
+            else if (!Physics.Raycast(new Ray(pos, -playerT.right), 1f, layerCheckMask))
                 SetBedRotation(0);
         }
 
@@ -735,9 +739,9 @@ namespace Need_for_Sleep_BZ
             private static bool pressDelayedHeldButton;
 
             [HarmonyPostfix, HarmonyPatch("GetLookDelta")]
-            static void GetLookDeltaPostfix(GameInput __instance, ref Vector2 __result)
+            static void GetLookDeltaPostfix(ref Vector2 __result)
             {
-                if (setupDone == false || __result == default || Player.main.mode == Player.Mode.LockedPiloting)
+                if (setupDone == false || __result == default || Config.turnSensivity.Value == false || Player.main.mode == Player.Mode.LockedPiloting)
                     return;
 
                 float sleepDebt_ = GetSleepDebt();
@@ -765,18 +769,14 @@ namespace Need_for_Sleep_BZ
                 return true;
             }
             [HarmonyPostfix, HarmonyPatch("GetButtonDown")]
-            static void ScanInputsPostfix(GameInput __instance, Button button, ref bool __result)
+            static void ScanInputsPostfix(Button button, ref bool __result)
             {
-                if (setupDone == false || Time.timeScale == 0)
+                if (setupDone == false || Time.timeScale == 0 || Config.delayButtons.Value == false)
                     return;
-
-                //if (IsSleepButton(button) && IsLookingAtGround())
-                //    return;
 
                 if (__result)
                 {
-                    //AddDebug($"GetButtonDown {button}");
-                    if (checkingSleepButton)
+                    if (IsSleepButton(button) && IsLookingAtGround())
                         return;
 
                     if (Main.tweaksFixesLoaded)
@@ -837,6 +837,7 @@ namespace Need_for_Sleep_BZ
                 }
                 if (__result && delayedButton == Button.None && delayableButtons.Contains(button))
                 {
+                    //AddDebug($"DelayInput {button}");
                     float sleepDebt_ = GetSleepDebt();
                     if (sleepDebt_ == 0)
                         return;
@@ -852,8 +853,7 @@ namespace Need_for_Sleep_BZ
 
             private static IEnumerator DelayInput(Button button, float delayTime)
             {
-                AddDebug($"DelayInput {button}");
-                //lookingAtStorageContainer = false;
+                //AddDebug($"CR DelayInput {button}");
                 delayedButton = button;
                 yield return new WaitForSeconds(delayTime);
                 pressDelayedButton = true;
@@ -869,11 +869,9 @@ namespace Need_for_Sleep_BZ
             }
 
             [HarmonyPostfix, HarmonyPatch("GetButtonHeld")]
-            static void GetButtonHeldPostfix(GameInput __instance, Button button, ref bool __result)
+            static void GetButtonHeldPostfix(Button button, ref bool __result)
             {
-                //if (IsSleepButton(button) && IsLookingAtGround())
-                //    return;
-                if (setupDone == false || Time.timeScale == 0)
+                if (setupDone == false || Time.timeScale == 0 || Config.delayButtons.Value == false)
                     return;
 
                 if (builderEquipped)
@@ -945,17 +943,11 @@ namespace Need_for_Sleep_BZ
             [HarmonyPostfix, HarmonyPatch("OnHolster")]
             static void OnHolsterPostfix(PlayerTool __instance)
             {
-                //AddDebug("BuilderTool OnHolster");
-                if (__instance is BuilderTool)
-                    builderEquipped = false;
-                else if (__instance is Welder)
-                    welderEquipped = false;
-                else if (__instance is DiveReel)
-                    divereelEquipped = false;
-                else if (__instance is Seaglide)
-                    seaglideEquipped = false;
-                //else if (__instance is SpyPenguinRemote)
-                //    spyPenguinEquipped = false;
+                //AddDebug("PlayerTool OnHolster");
+                builderEquipped = false;
+                welderEquipped = false;
+                divereelEquipped = false;
+                seaglideEquipped = false;
             }
         }
 
@@ -1026,13 +1018,6 @@ namespace Need_for_Sleep_BZ
                 AddDebug($"SnowStalkerAttackLastTarget StartPerform {__instance.currentTarget.name}");
             }
         }
-
-        static void AttackPlayerSleep(CrawlerAttackLastTarget crawlerAttackLastTarget)
-        {
-            Player.main.cinematicModeActive = false;
-            crawlerAttackLastTarget.swimBehaviour.SwimTo(crawlerAttackLastTarget.lastTarget.target.transform.position, crawlerAttackLastTarget.moveVelocity);
-        }
-
 
         [HarmonyPatch(typeof(Survival))]
         class Survival_patch
